@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Logout | Real-Time Task Manager</title>
+</head>
+<body>
+    <h1>Logout</h1>
+    <p>Are you sure you want to log out?</p>
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Yes, Log Out</button>
+    </form>
+    <br>
+    <a href="/api/users/">Cancel and go back to Users</a>
+</body>
+</html>
