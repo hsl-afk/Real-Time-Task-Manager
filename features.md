@@ -31,3 +31,20 @@ This file tracks the features implemented in the Real-Time Task Manager to avoid
   - **Managers:** Full CRUD access. Can assign tasks only to 'employee' roles. `created_by` is auto-filled.
   - **Employees:** Read-only access to their assigned tasks, with permission to update only the `status` field.
   - **Admins:** Explicitly blocked from managing tasks.
+  - Form validation exclusively restricts the `assigned_to` field dropdown to `employee` users.
+  - Completed tasks are hidden from the default list view for all users. Managers can view them by appending `?status=completed` to the URL.
+  - Managers can optionally attach a single file to a task during creation or update (e.g. PDFs, images). Employees can view/download these attachments via the provided URL.
+
+### 5. Notification System
+- Added `Notification` model to store system alerts (recipient, message, timestamp).
+- When an employee updates a task status to `COMPLETED`, the API automatically generates a notification directed at the manager who originally created the task.
+- Created `/api/notifications/` endpoint so managers can read their own alerts.
+
+### 6. Real-Time Updates (WebSockets)
+- Integrated Django Channels and Daphne ASGI server.
+- Uses `InMemoryChannelLayer` for broadcasting events.
+- Created `NotificationConsumer` at `ws/notifications/` to handle authenticated user connections.
+- Automatically pushes JSON messages in real-time over WebSockets when:
+  - An employee is assigned a new task.
+  - A manager updates a task.
+  - An employee marks a task as completed.

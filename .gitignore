@@ -1,9 +1,12 @@
 venv/
-*.pyc
+*.pyc/
 __pycache__/
 db.sqlite3
-.env
-*.log
+.env/
+*.log/
 .vscode/
 .idea/
 .DS_Store
+real_time_task_management/instructions.md
+real_time_task_management/media/
+real_time_task_management/db.sqlite3
