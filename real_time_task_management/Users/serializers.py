@@ -32,7 +32,7 @@ class TaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Task
-        fields = ['id', 'url', 'title', 'description', 'priority', 'assigned_to', 'status', 'due_date']
+        fields = ['id', 'url', 'title', 'description', 'attachment', 'priority', 'assigned_to', 'status', 'due_date']
         read_only_fields = ['created_by']
 
     def validate_assigned_to(self, value):

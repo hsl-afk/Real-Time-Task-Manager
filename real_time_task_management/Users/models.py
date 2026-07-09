@@ -19,6 +19,7 @@ class Task(models.Model):
 
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
+    attachment = models.FileField(upload_to='task_attachments/', blank=True, null=True)
     priority = models.CharField(max_length=20, choices=Priority.choices,default=Priority.MEDIUM)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     assigned_to = models.ManyToManyField(User, blank=True, related_name='assigned_tasks')
