@@ -31,6 +31,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
+    'Users',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -38,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'Users',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -69,6 +71,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'real_time_task_management.wsgi.application'
+ASGI_APPLICATION = 'real_time_task_management.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 
 # Database
@@ -130,3 +139,7 @@ AUTH_USER_MODEL = 'Users.User'
 LOGIN_REDIRECT_URL = '/api/users/'
 LOGOUT_REDIRECT_URL = '/'
 
+# Media files
+import os
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
