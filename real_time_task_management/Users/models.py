@@ -32,3 +32,14 @@ class Task(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+class Notification(models.Model):
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    message = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"To {self.recipient.username}: {self.message}"
+
+    class Meta:
+        ordering = ['-created_at']

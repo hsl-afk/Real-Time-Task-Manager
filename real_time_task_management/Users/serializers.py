@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from .models import Notification, Task
 
 User = get_user_model()
 
@@ -22,8 +23,6 @@ class UserSerializer(serializers.ModelSerializer):
             instance.set_password(validated_data.pop('password'))
         return super().update(instance, validated_data)
 
-from .models import Task
-
 class TaskSerializer(serializers.ModelSerializer):
     assigned_to = serializers.PrimaryKeyRelatedField(
         many=True,
@@ -33,7 +32,7 @@ class TaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Task
-        fields = '__all__'
+        fields = ['id', 'url', 'title', 'description', 'priority', 'assigned_to', 'status', 'due_date']
         read_only_fields = ['created_by']
 
     def validate_assigned_to(self, value):
@@ -49,3 +48,9 @@ class TaskSerializer(serializers.ModelSerializer):
             allowed_fields = {'status'}
             validated_data = {k: v for k, v in validated_data.items() if k in allowed_fields}
         return super().update(instance, validated_data)
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = '__all__'
+        read_only_fields = ['recipient', 'message', 'created_at']
