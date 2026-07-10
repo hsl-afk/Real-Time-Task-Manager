@@ -1,3 +1,4 @@
+# pyrefly: ignore [missing-import]
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
@@ -22,6 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
             instance.set_password(validated_data.pop('password'))
         return super().update(instance, validated_data)
 
+# pyrefly: ignore [missing-import]
 from .models import Task
 
 class TaskSerializer(serializers.ModelSerializer):
