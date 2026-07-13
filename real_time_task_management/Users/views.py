@@ -6,6 +6,8 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import render
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from .serializers import UserSerializer, TaskSerializer, NotificationSerializer
 from .permissions import IsAdminOrManagerReadOnly, IsManagerOrAssignedEmployeeTaskPermission
 from .models import Task, Notification
@@ -31,7 +33,6 @@ class EmailTokenObtainView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # EmailBackend maps the 'username' kwarg to email lookup
         user = authenticate(request, username=email, password=password)
 
         if user is None:
