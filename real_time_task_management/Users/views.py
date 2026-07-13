@@ -241,3 +241,27 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return Notification.objects.filter(recipient=self.request.user)
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        try:
+            old_pass = request.data.get('old_pass')
+            new_pass = request.data.get('new_pass')
+            confirm_pass = request.data.get('confirm_pass')
+            if not old_pass or not new_pass or not confirm_pass:
+                return Response({'success':False, 'message':'All fields are required'}, status=status.HTTP_400_BAD_REQUEST)
+            if old_pass == new_pass:
+                return Response({'success':False, 'message':'Old password and new password cannot be same'})
+            if new_pass != confirm_pass:
+                return Response({'success':False, 'message':'New password and confirm password do not match'})
+            user = request.user
+            if not user.check_password(old_pass):
+                return Response({'success':False, 'message':'Incorrect old password'})
+            user.set_password(new_pass)
+            user.save()
+
+            return Response({'success':True, 'message':'Password changed successfully'})
+        except Exception as e:
+            return Response({'success':False, 'message':str(e)}, status=status.HTTP_400_BAD_REQUEST) 
+
