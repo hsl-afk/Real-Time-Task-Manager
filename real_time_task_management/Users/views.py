@@ -94,9 +94,42 @@ class logout_view(APIView):
         except Exception as e:
             return Response({"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-def login_page(request):
-    """Render the JWT-powered login page (no session logic)."""
-    return render(request, 'Users/login.html')
+class LoginView(APIView):
+    """
+    GET  /login/  → renders the HTML login page (browser).
+    POST /login/  → accepts { "email": "...", "password": "..." }
+                    returns  { "success": true, "access": "...", "refresh": "..." }
+    CSRF-exempt for API clients (Postman, mobile apps, etc.)
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email', '').strip()
+        password = request.data.get('password', '')
+
+        if not email or not password:
+            return Response(
+                {'success': False, 'error': 'Email and password are required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = authenticate(request, username=email, password=password)
+
+        if user is None:
+            return Response(
+                {'success': False, 'error': 'Invalid email or password.'},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        refresh = RefreshToken.for_user(user)
+        userDetail = UserSerializer(user).data
+        return Response({
+            'success': True,
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'userDetail': userDetail,
+        }, status=status.HTTP_200_OK)
+
 
 def logout_page(request):
     """Render the JWT-powered logout page."""

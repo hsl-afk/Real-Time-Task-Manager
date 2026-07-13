@@ -11,5 +11,4 @@ urlpatterns = [
     path('', include(router.urls)),
     path('token/', EmailTokenObtainView.as_view(), name='token_obtain'),
     path('token/refresh/', TokenRefreshCustomView.as_view(), name='token_refresh'),
-    path('logout/', logout_view.as_view(), name='logout'),
 ]

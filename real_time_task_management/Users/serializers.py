@@ -1,11 +1,14 @@
-# pyrefly: ignore [missing-import]
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Notification, Task
+from .models import Notification, Task, Role
 
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
+    role = serializers.SlugRelatedField(
+        queryset=Role.objects.all(),
+        slug_field='name'
+    )
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'password', 'first_name', 'last_name', 'role']
@@ -24,14 +27,13 @@ class UserSerializer(serializers.ModelSerializer):
             instance.set_password(validated_data.pop('password'))
         return super().update(instance, validated_data)
 
-# pyrefly: ignore [missing-import]
 class TaskSerializer(serializers.ModelSerializer):
     assigned_to = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=User.objects.filter(role__name='employee'),
         required=True
     )
-
+    
     class Meta:
         model = Task
         fields = ['id', 'url', 'title', 'description', 'attachment', 'priority', 'assigned_to', 'status', 'due_date']
