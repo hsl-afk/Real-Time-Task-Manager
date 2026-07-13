@@ -9,7 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from .serializers import UserSerializer, TaskSerializer, NotificationSerializer
-from .permissions import IsAdminOrManagerReadOnly, IsManagerOrAssignedEmployeeTaskPermission
+from .permissions import IsAdminOrManagerUserAccess, IsManagerOrAssignedEmployeeTaskPermission
 from .models import Task, Notification
 
 User = get_user_model()
@@ -144,7 +144,19 @@ class UserViewSet(viewsets.ModelViewSet):
     """
     serializer_class = UserSerializer
     queryset = User.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminOrManagerReadOnly]
+    permission_classes = [IsAuthenticated, IsAdminOrManagerUserAccess]
+
+    def create(self, request, *args, **kwargs):
+        if request.user.role.name == 'manager':
+            requested_role = request.data.get('role')
+            if requested_role != 'employee':
+                return Response(
+                    {"error": "Managers are only allowed to create users with the 'employee' role."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        return super().create(request, *args, **kwargs)
+
+
 
 
 from channels.layers import get_channel_layer
@@ -265,3 +277,8 @@ class ChangePasswordView(APIView):
         except Exception as e:
             return Response({'success':False, 'message':str(e)}, status=status.HTTP_400_BAD_REQUEST) 
 
+# class SignupView(viewsets.ModelViewSet):
+#     serializer_class = UserSerializer
+#     queryset = User.objects.all()
+#     permission_classes = [AllowAny]
+    
