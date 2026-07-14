@@ -1,6 +1,6 @@
 from rest_framework import permissions
 
-class IsAdminOrManagerReadOnly(permissions.BasePermission):
+class IsAdminOrManagerUserAccess(permissions.BasePermission):
     """
     Allows full access to 'admin' role.
     Allows read-only access to 'manager' role.
@@ -13,13 +13,11 @@ class IsAdminOrManagerReadOnly(permissions.BasePermission):
         role_name = request.user.role.name
 
         # Admins have full access
-        if role_name == 'admin':
+        if role_name == 'admin' or role_name == 'manager':
             return True
-            
         # Managers only have access to safe methods (GET, HEAD, OPTIONS)
-        if role_name == 'manager' and request.method in permissions.SAFE_METHODS:
-            return True
-            
+        # if role_name == 'manager' and request.method in permissions.SAFE_METHODS:
+        #     return True
         return False
 
 class IsManagerOrAssignedEmployeeTaskPermission(permissions.BasePermission):

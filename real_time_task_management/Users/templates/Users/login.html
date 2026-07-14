@@ -6,14 +6,65 @@
 </head>
 <body>
     <h1>Login</h1>
-    {% if form.errors %}
-        <p style="color: red;">Invalid username or password. Please try again.</p>
-    {% endif %}
-    <form method="post" action="{% url 'login' %}">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Sign In</button>
-        <input type="hidden" name="next" value="{{ next }}">
+
+    <div id="error-msg" style="display:none; color:red;"></div>
+
+    <form id="loginForm">
+        <p>
+            <label for="email">Email:</label><br>
+            <input type="email" id="email" name="email" required autofocus>
+        </p>
+        <p>
+            <label for="password">Password:</label><br>
+            <input type="password" id="password" name="password" required>
+        </p>
+        <button type="submit" id="submitBtn">Sign In</button>
     </form>
+
+    <script>
+        // Redirect if already logged in
+        if (localStorage.getItem('access_token')) {
+            window.location.replace('/api/');
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const email    = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error-msg');
+            const btn      = document.getElementById('submitBtn');
+
+            errorDiv.style.display = 'none';
+            btn.disabled = true;
+            btn.textContent = 'Signing in...';
+
+            try {
+                const res = await fetch('/login/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    localStorage.setItem('access_token',  data.access);
+                    localStorage.setItem('refresh_token', data.refresh);
+                    window.location.replace('/api/');
+                } else {
+                    errorDiv.textContent = data.error || 'Invalid email or password.';
+                    errorDiv.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'Sign In';
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Network error. Please try again.';
+                errorDiv.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Sign In';
+            }
+        });
+    </script>
 </body>
 </html>
