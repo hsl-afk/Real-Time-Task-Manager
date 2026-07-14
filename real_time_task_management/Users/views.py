@@ -12,6 +12,8 @@ from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, Bl
 from .serializers import UserSerializer, TaskSerializer, NotificationSerializer
 from .permissions import IsAdminOrManagerUserAccess, IsManagerOrAssignedEmployeeTaskPermission
 from .models import Task, Notification
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 User = get_user_model()
 
@@ -88,16 +90,6 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        if user.must_change_password:
-            temp_token = AccessToken.for_user(user)
-            temp_token['temp'] = True
-            temp_token.set_exp(lifetime=timedelta(minutes=10))
-            return Response({
-                'success': True,
-                'must_change_password': True,
-                'temp_token': str(temp_token),
-            }, status=status.HTTP_200_OK)
-
         refresh = RefreshToken.for_user(user)
         userDetail = UserSerializer(user).data
         return Response({
@@ -125,24 +117,28 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         if request.user.role.name == 'manager':
-            requested_role = request.data.get('role')
-            if requested_role != 'employee':
+            if request.data.get('role') != 'employee':
                 return Response(
                     {"error": "Managers are only allowed to create users with the 'employee' role."},
                     status=status.HTTP_403_FORBIDDEN
                 )
-        return super().create(request, *args, **kwargs)
 
-    def perform_create(self, serializer):
-        user = serializer.save()
-        user.must_change_password = True
-        user.save(update_fields=['must_change_password'])
+        # Validate and save the new user
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        new_user = serializer.instance
 
+        # Generate temp_token for the newly created user
+        temp_token = AccessToken.for_user(new_user)
+        temp_token['temp'] = True
+        temp_token.set_exp(lifetime=timedelta(minutes=10))
+        return Response({
+            'success': True,
+            'user': UserSerializer(new_user).data,
+            'temp_token': str(temp_token),
+        }, status=status.HTTP_201_CREATED)
 
-
-
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 
 class TaskViewSet(viewsets.ModelViewSet):
     """
@@ -301,8 +297,7 @@ class ForceChangePasswordView(APIView):
 
         user = User.objects.get(id=token['user_id'])
         user.set_password(new_pass)
-        user.must_change_password = False
-        user.save(update_fields=['password', 'must_change_password'])
+        user.save(update_fields=['password'])
 
         return Response(
             {'success': True, 'message': 'Password changed successfully. Please log in again.'},
