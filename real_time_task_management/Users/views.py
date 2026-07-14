@@ -11,6 +11,8 @@ from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, Bl
 from .serializers import UserSerializer, TaskSerializer, NotificationSerializer
 from .permissions import IsAdminOrManagerUserAccess, IsManagerOrAssignedEmployeeTaskPermission
 from .models import Task, Notification
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 User = get_user_model()
 
@@ -155,12 +157,6 @@ class UserViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_403_FORBIDDEN
                 )
         return super().create(request, *args, **kwargs)
-
-
-
-
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 
 class TaskViewSet(viewsets.ModelViewSet):
     """
