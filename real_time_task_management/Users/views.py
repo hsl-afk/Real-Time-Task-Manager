@@ -5,50 +5,15 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import get_user_model
 from django.shortcuts import render
 from django.contrib.auth import authenticate
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from datetime import timedelta
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from .serializers import UserSerializer, TaskSerializer, NotificationSerializer
 from .permissions import IsAdminOrManagerUserAccess, IsManagerOrAssignedEmployeeTaskPermission
 from .models import Task, Notification
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 
 User = get_user_model()
-
-
-class EmailTokenObtainView(APIView):
-    """
-    POST /api/token/
-    Accepts { "email": "...", "password": "..." }
-    Returns  { "success": true, "access": "...", "refresh": "..." }
-    """
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        email = request.data.get('email', '').strip()
-        password = request.data.get('password', '')
-
-        if not email or not password:
-            return Response(
-                {'success': False, 'error': 'Email and password are required.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        user = authenticate(request, username=email, password=password)
-
-        if user is None:
-            return Response(
-                {'success': False, 'error': 'Invalid email or password.'},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-
-        refresh = RefreshToken.for_user(user)
-        return Response({
-            'success': True,
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
-        }, status=status.HTTP_200_OK)
 
 
 class TokenRefreshCustomView(APIView):
@@ -123,6 +88,16 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
+        if user.must_change_password:
+            temp_token = AccessToken.for_user(user)
+            temp_token['temp'] = True
+            temp_token.set_exp(lifetime=timedelta(minutes=10))
+            return Response({
+                'success': True,
+                'must_change_password': True,
+                'temp_token': str(temp_token),
+            }, status=status.HTTP_200_OK)
+
         refresh = RefreshToken.for_user(user)
         userDetail = UserSerializer(user).data
         return Response({
@@ -157,6 +132,17 @@ class UserViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_403_FORBIDDEN
                 )
         return super().create(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        user = serializer.save()
+        user.must_change_password = True
+        user.save(update_fields=['must_change_password'])
+
+
+
+
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 class TaskViewSet(viewsets.ModelViewSet):
     """
@@ -273,8 +259,52 @@ class ChangePasswordView(APIView):
         except Exception as e:
             return Response({'success':False, 'message':str(e)}, status=status.HTTP_400_BAD_REQUEST) 
 
-# class SignupView(viewsets.ModelViewSet):
-#     serializer_class = UserSerializer
-#     queryset = User.objects.all()
-#     permission_classes = [AllowAny]
-    
+
+class ForceChangePasswordView(APIView):
+    """
+    POST /api/auth/force-change-password/
+    Accepts { "temp_token": "...", "new_password": "...", "confirm_password": "..." }
+    Validates the one-time temp token, changes the password, forces re-login.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        temp_token_str = request.data.get('temp_token', '')
+        new_pass = request.data.get('new_password', '')
+        confirm_pass = request.data.get('confirm_password', '')
+
+        if not temp_token_str or not new_pass or not confirm_pass:
+            return Response(
+                {'success': False, 'error': 'temp_token, new_password and confirm_password are required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if new_pass != confirm_pass:
+            return Response(
+                {'success': False, 'error': 'Passwords do not match.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            token = AccessToken(temp_token_str)
+        except TokenError:
+            return Response(
+                {'success': False, 'error': 'Invalid or expired token.'},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if not token.get('temp'):
+            return Response(
+                {'success': False, 'error': 'Invalid token type.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = User.objects.get(id=token['user_id'])
+        user.set_password(new_pass)
+        user.must_change_password = False
+        user.save(update_fields=['password', 'must_change_password'])
+
+        return Response(
+            {'success': True, 'message': 'Password changed successfully. Please log in again.'},
+            status=status.HTTP_200_OK,
+        )

@@ -24,9 +24,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('Users.urls')),
     path('login/', LoginView.as_view(), name='login'),
-    # path('signup/', SignupView.as_view(), name='signup'),
     path('logout/', logout_view.as_view(), name='logout')
 ]
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)    
