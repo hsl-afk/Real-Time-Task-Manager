@@ -1,9 +1,7 @@
 import logging
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
-# pyrefly: ignore [missing-import]
 from .models import Task
-# pyrefly: ignore [missing-import]
 from .tasks import send_assignment_email
 
 logger = logging.getLogger(__name__)
