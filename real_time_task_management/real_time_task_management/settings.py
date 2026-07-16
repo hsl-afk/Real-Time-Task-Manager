@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'channels',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -167,3 +168,20 @@ SIMPLE_JWT = {
 import os
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Celery settings
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+CELERY_TIMEZONE = 'UTC'
+
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'send-daily-reminders-at-9am': {
+        'task': 'Users.tasks.send_daily_reminders',
+        'schedule': crontab(hour=9, minute=0),
+    },
+}
+
+# Email Settings (Console for testing)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
