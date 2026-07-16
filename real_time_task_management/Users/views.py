@@ -99,12 +99,6 @@ class LoginView(APIView):
             'userDetail': userDetail,
         }, status=status.HTTP_200_OK)
 
-
-def logout_page(request):
-    """Render the JWT-powered logout page."""
-    return render(request, 'Users/logout.html')
-
-
 class UserViewSet(viewsets.ModelViewSet):
     """
     A viewset for viewing and editing user instances.
