@@ -9,7 +9,6 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             await self.close()
         else:
             self.group_name = f"user_{self.user.id}_notifications"
-            # Join room group
             await self.channel_layer.group_add(
                 self.group_name,
                 self.channel_name
@@ -18,13 +17,11 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         if hasattr(self, 'group_name'):
-            # Leave room group
             await self.channel_layer.group_discard(
                 self.group_name,
                 self.channel_name
             )
 
-    # Receive message from room group
     async def notification_message(self, event):
         message = event['message']
         notification_type = event.get('notification_type', 'info')
