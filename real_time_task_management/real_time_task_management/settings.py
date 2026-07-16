@@ -183,5 +183,11 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
-# Email Settings (Console for testing)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Email Settings (SMTP for real emails)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Or your specific SMTP provider
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'hsl@taglineinfotech.com'
+EMAIL_HOST_PASSWORD = 'wxir qcjw xrny yeuy'  # You need to replace this with your actual app password
+DEFAULT_FROM_EMAIL = 'hsl@taglineinfotech.com'
